@@ -31,36 +31,68 @@ class InstallerWizard:
         self.root.minsize(540, 420)
         self.root.configure(bg="#07111f")
 
+        self._apply_theme()
         self.root.result = InstallPlan(mode="cancel", create_shortcut=False)
 
         self._build_header()
         self._build_content()
         self._build_footer()
 
+    def _apply_theme(self):
+        if ttk is None:
+            return
+        style = ttk.Style(self.root)
+        if "clam" in style.theme_names():
+            style.theme_use("clam")
+        style.configure("Gold.TProgressbar", background="#d4af37", troughcolor="#1f2937", lightcolor="#d4af37", darkcolor="#b88b1d")
+        style.map("Gold.TProgressbar", background=[("active", "#d4af37")])
+
     def _build_header(self):
         header = tk.Frame(self.root, bg="#0b1a2b", height=110)
         header.pack(fill="x")
         header.pack_propagate(False)
 
-        title = tk.Label(
+        badge = tk.Label(
             header,
-            text="Artesys-DLC",
+            text="A",
+            font=("Segoe UI", 28, "bold"),
+            fg="#d4af37",
+            bg="#10253e",
+            bd=2,
+            relief="solid",
+            padx=18,
+            pady=8,
+        )
+        badge.place(x=36, y=20)
+
+        brand = tk.Label(
+            header,
+            text="Artesys",
             font=("Segoe UI", 22, "bold"),
             fg="#f8fafc",
             bg="#0b1a2b",
         )
-        title.place(relx=0.5, y=26, anchor="n")
+        brand.place(x=100, y=22)
 
         subtitle = tk.Label(
             header,
-            text="Local setup and launcher",
-            font=("Segoe UI", 10),
+            text="DLC Installer",
+            font=("Segoe UI", 11, "bold"),
+            fg="#d4af37",
+            bg="#0b1a2b",
+        )
+        subtitle.place(x=101, y=58)
+
+        subtitle2 = tk.Label(
+            header,
+            text="local setup and launcher",
+            font=("Segoe UI", 9),
             fg="#cbd5e1",
             bg="#0b1a2b",
         )
-        subtitle.place(relx=0.5, y=62, anchor="n")
+        subtitle2.place(x=101, y=80)
 
-        accent = tk.Frame(header, bg="#60a5fa", height=4)
+        accent = tk.Frame(header, bg="#d4af37", height=4)
         accent.place(relx=0.14, rely=1.0, relwidth=0.72, anchor="s")
 
     def _build_content(self):
@@ -98,7 +130,7 @@ class InstallerWizard:
         ).pack(anchor="w", pady=(18, 0))
 
         self.progress_var = tk.DoubleVar(value=0.0)
-        self.progress = ttk.Progressbar(content, mode="determinate", maximum=100, variable=self.progress_var)
+        self.progress = ttk.Progressbar(content, mode="determinate", maximum=100, variable=self.progress_var, style="Gold.TProgressbar")
         self.progress.pack(fill="x", pady=(16, 10))
 
         status = tk.Label(
@@ -137,7 +169,7 @@ class InstallerWizard:
         self.launch_button = tk.Button(
             footer,
             text="Launch app",
-            bg="#2563eb",
+            bg="#1d4ed8",
             fg="white",
             font=("Segoe UI", 10, "bold"),
             width=18,
@@ -160,8 +192,8 @@ class InstallerWizard:
         install_button = tk.Button(
             footer,
             text="Install",
-            bg="#10b981",
-            fg="white",
+            bg="#d4af37",
+            fg="#111827",
             font=("Segoe UI", 10, "bold"),
             width=14,
             command=self._perform_install,
