@@ -83,6 +83,22 @@ This launcher detects the current operating system and runs the matching package
 - Linux: installs the system prerequisites available through the package manager, then creates a .desktop launcher
 - macOS: installs the required Homebrew packages and creates a Desktop launcher
 
+### Download the Windows installer
+
+Pull requests that change the installer or app runtime build a test installer in the **Windows Installer** GitHub Actions workflow. Open the workflow run, expand **Artifacts**, and download `windows-installer`; extract the downloaded ZIP to get `Artesys-DLC-Setup.exe` and its SHA-256 checksum.
+
+For a versioned release, update `version` in `modules/metadata.py`, commit the change, and push a matching version tag such as `v2.1.6`. The workflow builds the installer and attaches it, along with `SHA256SUMS.txt`, to the GitHub Release. Download it from the repository's **Releases** page.
+
+The installer runs the existing PowerShell setup flow, which downloads prerequisites, Python packages, and model files. Test it in a clean Windows account or virtual machine before distributing it broadly.
+
+To build locally, install [Inno Setup 6](https://jrsoftware.org/isinfo.php) on Windows and run this from the repository root:
+
+```powershell
+ISCC.exe installer\windows\Artesys-DLC.iss
+```
+
+The executable is written to `installer\windows\Output\Artesys-DLC-Setup.exe`.
+
 ### Download and test on a real machine
 
 1. Download the repository as a ZIP from the GitHub branch or clone it:
