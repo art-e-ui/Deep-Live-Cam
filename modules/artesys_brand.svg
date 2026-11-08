@@ -1,0 +1,37 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Artesys DLC monogram emblem">
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#050c17"/>
+      <stop offset="32%" stop-color="#0d1d31"/>
+      <stop offset="68%" stop-color="#18314d"/>
+      <stop offset="100%" stop-color="#38276d"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0%" x2="100%" y1="0%" y2="0%">
+      <stop offset="0%" stop-color="#fffaf0"/>
+      <stop offset="15%" stop-color="#f1deae"/>
+      <stop offset="33%" stop-color="#fffdf8"/>
+      <stop offset="50%" stop-color="#d8ad61"/>
+      <stop offset="67%" stop-color="#f5e7c2"/>
+      <stop offset="84%" stop-color="#b6853b"/>
+      <stop offset="100%" stop-color="#fff6dd"/>
+    </linearGradient>
+    <linearGradient id="blueGlow" x1="0%" x2="100%" y1="0%" y2="0%">
+      <stop offset="0%" stop-color="#79dcff"/>
+      <stop offset="100%" stop-color="#eef8ff"/>
+    </linearGradient>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#030b14" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <rect x="10" y="10" width="236" height="236" rx="56" fill="url(#bg)"/>
+  <rect x="18" y="18" width="220" height="220" rx="48" fill="none" stroke="rgba(246, 216, 138, 0.48)" stroke-width="2"/>
+  <rect x="30" y="30" width="196" height="196" rx="40" fill="rgba(255,255,255,0.05)"/>
+
+  <g filter="url(#shadow)">
+    <path d="M73 177L128 58L183 177H160L143 142H113L96 177H73ZM119 120H137L128 94L119 120Z" fill="url(#metal)"/>
+    <path d="M107 177H149L134 204H122L107 177Z" fill="#f9f1d8" opacity="0.92"/>
+    <path d="M52 180C74 144 98 110 128 74C158 110 182 144 204 180" fill="none" stroke="url(#blueGlow)" stroke-width="7" stroke-linecap="round" opacity="0.8"/>
+    <path d="M42 178C74 143 98 113 128 84C158 113 182 143 214 178" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>

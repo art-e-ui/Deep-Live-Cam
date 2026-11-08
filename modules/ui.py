@@ -31,7 +31,8 @@ from PySide6.QtCore import (
     Qt,
     Signal,
 )
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QIcon, QImage, QPainter, QPixmap
+from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -69,6 +70,7 @@ from modules.face_analyser import (
 from modules.gettext import LanguageManager
 from modules.gpu_processing import gpu_cvt_color, gpu_flip, gpu_resize
 from modules.processors.frame.core import get_frame_processors_modules
+from modules.recent_images import get_recent_images, record_recent_image
 from modules.utilities import (
     has_image_extension,
     is_image,
@@ -111,54 +113,85 @@ SOURCE_TARGET_PREVIEW_SIZE = 200
 # ─── modern dark stylesheet ───────────────────────────────────────────────
 
 QSS = """
-QMainWindow, QDialog { background-color: #1e1e1e; color: #e6e6e6; }
-QWidget { color: #e6e6e6; font-family: "Segoe UI", "SF Pro Display", "Helvetica Neue", Arial, sans-serif; font-size: 11pt; }
+QMainWindow, QDialog {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #181d2a, stop:0.5 #111827, stop:1 #0b0f18);
+    color: #edf3ff;
+}
+QWidget {
+    color: #edf3ff;
+    font-family: "Segoe UI", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    font-size: 11pt;
+}
 
 QGroupBox {
-    background-color: #262626;
-    border: 1px solid #333333;
-    border-radius: 10px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 rgba(25, 34, 49, 0.92),
+                                stop:1 rgba(16, 22, 33, 0.96));
+    border: 1px solid rgba(191, 161, 102, 0.28);
+    border-radius: 12px;
     margin-top: 14px;
     padding-top: 18px;
     font-weight: 600;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
 }
 QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
     padding: 0 8px;
-    color: #9ec5ff;
+    color: #f3d9a5;
 }
 
 QPushButton {
-    background-color: #2d6cdf;
-    color: white;
-    border: none;
-    border-radius: 8px;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                                stop:0 #f7d889, stop:0.2 #d7a74d, stop:0.5 #8a6b2a, stop:1 #4168d9);
+    color: #f8fbff;
+    border: 1px solid rgba(255, 216, 140, 0.5);
+    border-radius: 10px;
     padding: 8px 16px;
-    font-weight: 600;
+    font-weight: 700;
+    min-height: 30px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 18px rgba(60, 97, 190, 0.18);
 }
-QPushButton:hover  { background-color: #3a7af0; }
-QPushButton:pressed{ background-color: #1d57c2; }
-QPushButton:disabled { background-color: #444; color: #888; }
+QPushButton:hover  { background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #f9df9f, stop:0.25 #e0b65e, stop:0.55 #9c7f39, stop:1 #4a75de); }
+QPushButton:pressed{ background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #cda552, stop:0.35 #a67c34, stop:0.7 #2d5bd7, stop:1 #2249a9); }
+QPushButton:disabled { background: #444b59; color: #7b8698; border: 1px solid #3a404d; }
 QPushButton#secondary {
-    background-color: #3a3a3a;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 rgba(41, 49, 64, 0.96),
+                                stop:1 rgba(24, 31, 43, 0.96));
+    border: 1px solid rgba(175, 200, 255, 0.28);
 }
-QPushButton#secondary:hover { background-color: #4a4a4a; }
-QPushButton#danger { background-color: #c2412d; }
-QPushButton#danger:hover  { background-color: #d8523c; }
+QPushButton#secondary:hover { background: rgba(51, 59, 76, 0.98); }
+QPushButton#danger { background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #d64b3e, stop:1 #b7362c); }
+QPushButton#danger:hover  { background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #df5a4d, stop:1 #c54036); }
 
 QComboBox {
-    background-color: #2a2a2a;
-    border: 1px solid #404040;
-    border-radius: 6px;
+    background: rgba(28, 34, 45, 0.95);
+    border: 1px solid rgba(146, 165, 196, 0.35);
+    border-radius: 8px;
     padding: 6px 10px;
-    min-height: 24px;
-}
-QComboBox:hover { border-color: #2d6cdf; }
-QComboBox QAbstractItemView {
-    background-color: #2a2a2a;
+    min-height: 30px;
     selection-background-color: #2d6cdf;
-    border: 1px solid #404040;
+}
+QComboBox:hover { border-color: rgba(141, 176, 255, 0.8); }
+QComboBox QAbstractItemView {
+    background-color: #1f2735;
+    selection-background-color: #2d6cdf;
+    border: 1px solid rgba(146, 165, 196, 0.4);
+}
+
+QLineEdit {
+    background: rgba(19, 25, 34, 0.95);
+    border: 1px solid rgba(146, 165, 196, 0.35);
+    border-radius: 8px;
+    padding: 7px 10px;
+    color: #edf3ff;
+    selection-background-color: #2d6cdf;
+}
+QLineEdit:focus {
+    border: 1px solid rgba(141, 176, 255, 0.9);
+    box-shadow: 0 0 0 2px rgba(45, 108, 223, 0.15);
 }
 
 QCheckBox {
@@ -168,7 +201,7 @@ QCheckBox {
 QCheckBox::indicator {
     width: 36px; height: 18px;
     border-radius: 9px;
-    background-color: #3a3a3a;
+    background-color: #424d5e;
 }
 QCheckBox::indicator:checked {
     background-color: #2d6cdf;
@@ -176,7 +209,7 @@ QCheckBox::indicator:checked {
 
 QSlider::groove:horizontal {
     height: 6px;
-    background: #3a3a3a;
+    background: #3b4658;
     border-radius: 3px;
 }
 QSlider::handle:horizontal {
@@ -184,7 +217,7 @@ QSlider::handle:horizontal {
     width: 16px; height: 16px;
     margin: -5px 0;
     border-radius: 8px;
-    border: 1px solid #cccccc;
+    border: 1px solid #dfe6ff;
 }
 QSlider::sub-page:horizontal {
     background: #2d6cdf;
@@ -192,24 +225,65 @@ QSlider::sub-page:horizontal {
 }
 
 QLabel#imageDrop {
-    background-color: #2a2a2a;
-    border: 2px dashed #444;
-    border-radius: 8px;
+    background: rgba(25, 32, 43, 0.9);
+    border: 2px dashed rgba(146, 165, 196, 0.4);
+    border-radius: 10px;
+    color: #dfeaff;
 }
 QLabel#statusLabel {
-    color: #b9b9b9;
+    color: #c9d5ec;
     font-size: 10pt;
     font-style: italic;
 }
 QLabel#linkLabel {
-    color: #6ea8ff;
+    color: #7fb2ff;
     text-decoration: underline;
+    font-weight: 700;
+}
+QWidget#brandBadge {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                stop:0 rgba(13, 18, 30, 0.98),
+                                stop:0.35 rgba(25, 38, 62, 0.97),
+                                stop:0.65 rgba(16, 24, 41, 0.98),
+                                stop:1 rgba(10, 14, 24, 0.99));
+    border: 1px solid rgba(226, 194, 120, 0.5);
+    border-radius: 18px;
+    padding: 10px 14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 28px rgba(17, 31, 61, 0.35);
+}
+QLabel#brandLabel {
+    color: #f2f7ff;
+    font-weight: 900;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    font-size: 24px;
+    text-shadow: 0 0 16px rgba(127, 179, 255, 0.45);
+}
+QLabel#brandSubLabel {
+    color: #f0ce7d;
+    font-size: 8.5pt;
+    letter-spacing: 2.6px;
+    text-transform: uppercase;
+    font-weight: 800;
+}
+QLabel#brandPill {
+    color: #dfe9ff;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                stop:0 rgba(89, 125, 255, 0.24),
+                                stop:1 rgba(204, 167, 93, 0.18));
+    border: 1px solid rgba(208, 173, 100, 0.35);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 7.8pt;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
 }
 
 QScrollArea { border: none; background: transparent; }
 
 QFrame#card {
-    background-color: #262626;
+    background-color: rgba(27, 35, 49, 0.9);
     border-radius: 10px;
 }
 """
@@ -475,6 +549,25 @@ def _make_image_drop(text: str, size: Tuple[int, int]) -> QLabel:
     return label
 
 
+def _load_app_icon() -> QIcon:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    icon_path = os.path.join(base_dir, "artesys_brand.svg")
+    if os.path.exists(icon_path):
+        try:
+            renderer = QSvgRenderer(icon_path)
+            if renderer.isValid():
+                size = 256
+                image = QImage(size, size, QImage.Format.Format_ARGB32)
+                image.fill(0)
+                painter = QPainter(image)
+                renderer.render(painter)
+                painter.end()
+                return QIcon(QPixmap.fromImage(image))
+        except Exception:
+            pass
+    return QIcon()
+
+
 class _Switch(QWidget):
     """Compact toggle switch with label + optional tooltip."""
 
@@ -506,6 +599,7 @@ class MainWindow(QMainWindow):
         self._start_cb = start_cb
         self._destroy_cb = destroy_cb
 
+        self.setWindowIcon(_load_app_icon())
         self.setWindowTitle(
             f"{modules.metadata.name} {modules.metadata.version} {modules.metadata.edition}"
         )
@@ -517,6 +611,9 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(root)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(12)
+
+        brand = self._build_brand_header()
+        layout.addWidget(brand)
 
         # Source/Target row
         layout.addLayout(self._build_image_row())
@@ -539,12 +636,63 @@ class MainWindow(QMainWindow):
         self._status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self._status_label)
 
-        footer = QLabel("Deep Live Cam")
+        footer = QLabel("Artesys-DLC")
         footer.setObjectName("linkLabel")
         footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
         footer.setCursor(Qt.CursorShape.PointingHandCursor)
         footer.mousePressEvent = lambda _e: webbrowser.open("https://deeplivecam.net")
         layout.addWidget(footer)
+
+    def _build_brand_header(self) -> QWidget:
+        badge = QWidget()
+        badge.setObjectName("brandBadge")
+        badge_layout = QHBoxLayout(badge)
+        badge_layout.setContentsMargins(12, 10, 12, 10)
+        badge_layout.setSpacing(14)
+
+        icon = QLabel()
+        icon_svg = os.path.join(os.path.dirname(os.path.abspath(__file__)), "artesys_brand.svg")
+        if os.path.exists(icon_svg):
+            renderer = QSvgRenderer(icon_svg)
+            if renderer.isValid():
+                image = QImage(64, 64, QImage.Format.Format_ARGB32)
+                image.fill(0)
+                painter = QPainter(image)
+                renderer.render(painter)
+                painter.end()
+                icon.setPixmap(QPixmap.fromImage(image))
+        icon.setFixedSize(64, 64)
+        icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        badge_layout.addWidget(icon)
+
+        text_layout = QVBoxLayout()
+        text_layout.setContentsMargins(0, 0, 0, 0)
+        text_layout.setSpacing(3)
+
+        title = QLabel("Artesys-DLC")
+        title.setObjectName("brandLabel")
+        title.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        text_layout.addWidget(title)
+
+        subtitle_row = QHBoxLayout()
+        subtitle_row.setContentsMargins(0, 0, 0, 0)
+        subtitle_row.setSpacing(8)
+
+        subtitle = QLabel("AI FACE SWAP STUDIO")
+        subtitle.setObjectName("brandSubLabel")
+        subtitle.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        subtitle_row.addWidget(subtitle)
+
+        pill = QLabel("CINEMATIC")
+        pill.setObjectName("brandPill")
+        pill.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        subtitle_row.addWidget(pill)
+        subtitle_row.addStretch(1)
+
+        text_layout.addLayout(subtitle_row)
+        badge_layout.addLayout(text_layout)
+        badge_layout.addStretch(1)
+        return badge
 
     # ── image row ────────────────────────────────────────────────────────
 
@@ -572,6 +720,12 @@ class MainWindow(QMainWindow):
         src_row.addWidget(self.btn_select_source)
         src_row.addWidget(self.btn_random_face)
         src_col.addLayout(src_row)
+
+        self.cb_recent_source = QComboBox()
+        self.cb_recent_source.setToolTip(_("Recently used source face images"))
+        self.cb_recent_source.addItem(_("Recent source images"))
+        self.cb_recent_source.currentIndexChanged.connect(self._on_recent_source_selected)
+        src_col.addWidget(self.cb_recent_source)
 
         # Swap button column
         swap_col = QVBoxLayout()
@@ -605,6 +759,14 @@ class MainWindow(QMainWindow):
         )
         self.btn_select_bg.clicked.connect(self._on_select_background)
         bg_col.addWidget(self.btn_select_bg)
+
+        self.cb_recent_bg = QComboBox()
+        self.cb_recent_bg.setToolTip(_("Recently used background images"))
+        self.cb_recent_bg.addItem(_("Recent background images"))
+        self.cb_recent_bg.currentIndexChanged.connect(self._on_recent_background_selected)
+        bg_col.addWidget(self.cb_recent_bg)
+
+        self._refresh_recent_image_lists()
 
         row.addLayout(src_col)
         row.addLayout(swap_col)
@@ -758,23 +920,45 @@ class MainWindow(QMainWindow):
         # Row 0: camera selector + Live button
         grid.addWidget(QLabel(_("Select Camera:")), 0, 0)
         self._camera_indices, self._camera_names = get_available_cameras()
+        self._camera_sources = list(self._camera_indices)
 
         self.cb_camera = QComboBox()
         if not self._camera_names or self._camera_names[0] == "No cameras found":
             self.cb_camera.addItem("No cameras found")
-            self.cb_camera.setEnabled(False)
             cam_ok = False
         else:
             self.cb_camera.addItems(self._camera_names)
             cam_ok = True
-        self.cb_camera.setToolTip(_("Select which camera to use for live mode"))
+
+        self.cb_camera.addItem("Network camera URL...")
+        self.cb_camera.setEnabled(True)
+        self.cb_camera.setMinimumWidth(220)
+        self.cb_camera.setToolTip(_("Select a USB webcam or a Wi‑Fi/IP camera stream"))
         grid.addWidget(self.cb_camera, 0, 1)
 
+        self.le_camera_url = QLineEdit()
+        self.le_camera_url.setPlaceholderText("rtsp://user:pass@192.168.1.25:554/stream or http://phone:8080/video")
+        self.le_camera_url.setClearButtonEnabled(True)
+        self.le_camera_url.setToolTip(_("Paste a phone/IP camera RTSP or MJPEG URL from a Wi‑Fi camera app"))
+        self.le_camera_url.setEnabled(False)
+        self.le_camera_url.setMinimumWidth(320)
+        self.le_camera_url.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.le_camera_url.textChanged.connect(self._on_camera_url_changed)
+        grid.addWidget(self.le_camera_url, 0, 2)
+
+        self.cb_camera.currentIndexChanged.connect(self._on_camera_source_change)
+
         self.btn_live = QPushButton(_("Live"))
-        self.btn_live.setEnabled(cam_ok)
-        self.btn_live.setToolTip(_("Start real-time face swap using webcam"))
+        self.btn_live.setEnabled(cam_ok or bool(self.le_camera_url.text().strip()))
+        self.btn_live.setMinimumWidth(90)
+        self.btn_live.setToolTip(_("Start real-time face swap using webcam or IP camera stream"))
         self.btn_live.clicked.connect(self._on_live)
-        grid.addWidget(self.btn_live, 0, 2)
+        grid.addWidget(self.btn_live, 0, 3)
+
+        grid.setColumnStretch(0, 0)
+        grid.setColumnStretch(1, 2)
+        grid.setColumnStretch(2, 3)
+        grid.setColumnStretch(3, 0)
 
         # Row 1: capture resolution
         grid.addWidget(QLabel(_("Resolution:")), 1, 0)
@@ -856,6 +1040,21 @@ class MainWindow(QMainWindow):
         modules.globals.virtual_camera_device = text if text != "Default / Auto" else None
         save_switch_states()
 
+    def _on_camera_url_changed(self, text: str) -> None:
+        if self.cb_camera.currentText() == "Network camera URL...":
+            self.btn_live.setEnabled(bool(text.strip()))
+        else:
+            self.btn_live.setEnabled(True)
+
+    def _on_camera_source_change(self, idx: int) -> None:
+        if idx >= len(self._camera_sources):
+            self.le_camera_url.setEnabled(True)
+            self.btn_live.setEnabled(bool(self.le_camera_url.text().strip()))
+            return
+        selected = self._camera_sources[idx]
+        self.le_camera_url.setEnabled(isinstance(selected, str) and selected == "network")
+        self.btn_live.setEnabled(True)
+
     def _on_resolution_change(self, idx: int) -> None:
         if 0 <= idx < len(self._resolution_options):
             _label, wh = self._resolution_options[idx]
@@ -885,6 +1084,51 @@ class MainWindow(QMainWindow):
     def set_status(self, text: str) -> None:
         self._status_label.setText(text)
 
+    def _refresh_recent_image_lists(self) -> None:
+        if hasattr(self, "cb_recent_source"):
+            self.cb_recent_source.blockSignals(True)
+            self.cb_recent_source.clear()
+            self.cb_recent_source.addItem(_("Recent source images"))
+            for path in get_recent_images("source"):
+                if os.path.exists(path):
+                    self.cb_recent_source.addItem(os.path.basename(path), path)
+            self.cb_recent_source.blockSignals(False)
+
+        if hasattr(self, "cb_recent_bg"):
+            self.cb_recent_bg.blockSignals(True)
+            self.cb_recent_bg.clear()
+            self.cb_recent_bg.addItem(_("Recent background images"))
+            for path in get_recent_images("background"):
+                if os.path.exists(path):
+                    self.cb_recent_bg.addItem(os.path.basename(path), path)
+            self.cb_recent_bg.blockSignals(False)
+
+    def _on_recent_source_selected(self, index: int) -> None:
+        if index <= 0 or not hasattr(self, "cb_recent_source"):
+            return
+        path = self.cb_recent_source.itemData(index)
+        if not path or not os.path.exists(path):
+            return
+        modules.globals.source_path = path
+        self.source_label.setPixmap(render_image_preview(path, (200, 200)))
+        self.source_label.setText("")
+        self.cb_recent_source.setCurrentIndex(index)
+
+    def _on_recent_background_selected(self, index: int) -> None:
+        if index <= 0 or not hasattr(self, "cb_recent_bg"):
+            return
+        path = self.cb_recent_bg.itemData(index)
+        if not path or not os.path.exists(path):
+            return
+        modules.globals.background_path = path
+        modules.globals.background_swap = True
+        if hasattr(self, "sw_bg_swap"):
+            self.sw_bg_swap.setChecked(True)
+        self.bg_label.setPixmap(render_image_preview(path, (180, 180)))
+        self.bg_label.setText("")
+        save_switch_states()
+        self.cb_recent_bg.setCurrentIndex(index)
+
     def _on_select_source(self) -> None:
         global _RECENT_SOURCE_DIR
         if _PREVIEW is not None:
@@ -896,9 +1140,11 @@ class MainWindow(QMainWindow):
         )
         if path and is_image(path):
             modules.globals.source_path = path
+            record_recent_image("source", path)
             _RECENT_SOURCE_DIR = os.path.dirname(path)
             self.source_label.setPixmap(render_image_preview(path, (200, 200)))
             self.source_label.setText("")
+            self._refresh_recent_image_lists()
         elif not path:
             return
         else:
@@ -986,10 +1232,12 @@ class MainWindow(QMainWindow):
             modules.globals.background_swap = True
             if hasattr(self, "sw_bg_swap"):
                 self.sw_bg_swap.setChecked(True)
+            record_recent_image("background", path)
             _RECENT_BG_DIR = os.path.dirname(path)
             self.bg_label.setPixmap(render_image_preview(path, (180, 180)))
             self.bg_label.setText("")
             save_switch_states()
+            self._refresh_recent_image_lists()
         elif not path:
             return
         else:
@@ -1119,10 +1367,17 @@ class MainWindow(QMainWindow):
 
     def _on_live(self) -> None:
         idx = self.cb_camera.currentIndex()
-        if idx < 0 or idx >= len(self._camera_indices):
-            update_status("No camera available")
-            return
-        camera_index = self._camera_indices[idx]
+        selected_name = self.cb_camera.currentText()
+        if selected_name == "Network camera URL...":
+            camera_source = self.le_camera_url.text().strip()
+            if not camera_source:
+                update_status("Please paste a network camera URL first")
+                return
+        else:
+            if idx < 0 or idx >= len(self._camera_sources):
+                update_status("No camera available")
+                return
+            camera_source = self._camera_sources[idx]
         if _LIVE_MAPPER is not None and _LIVE_MAPPER.isVisible():
             update_status("Source x Target Mapper is already open.")
             _LIVE_MAPPER.raise_()
@@ -1135,10 +1390,10 @@ class MainWindow(QMainWindow):
             from modules.processors.frame.face_swapper import get_face_swapper
             get_face_analyser()
             get_face_swapper()
-            _open_webcam_preview(camera_index)
+            _open_webcam_preview(camera_source)
         else:
             modules.globals.source_target_map = []
-            _open_live_mapper_dialog(camera_index, modules.globals.source_target_map)
+            _open_live_mapper_dialog(camera_source, modules.globals.source_target_map)
 
     def closeEvent(self, event):
         # Treat OS-level close as Destroy click
@@ -1411,7 +1666,7 @@ class _ProcessingWorker(QThread):
 
 
 class WebcamPreviewWindow(QWidget):
-    def __init__(self, camera_index: int):
+    def __init__(self, camera_source: int | str):
         super().__init__()
         self.setWindowTitle("Live Preview")
         self.resize(PREVIEW_DEFAULT_WIDTH, PREVIEW_DEFAULT_HEIGHT)
@@ -1422,7 +1677,7 @@ class WebcamPreviewWindow(QWidget):
         self._image_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout.addWidget(self._image_label, 1)
 
-        self._cap = VideoCapturer(camera_index)
+        self._cap = VideoCapturer(camera_source)
         req_w, req_h = modules.globals.capture_resolution
         if not self._cap.start(req_w, req_h, 60):
             update_status("Failed to start camera")
@@ -1538,11 +1793,11 @@ class WebcamPreviewWindow(QWidget):
         event.accept()
 
 
-def _open_webcam_preview(camera_index: int) -> None:
+def _open_webcam_preview(camera_source: int | str) -> None:
     global _WEBCAM_PREVIEW
     if _WEBCAM_PREVIEW is not None:
         _WEBCAM_PREVIEW.close()
-    _WEBCAM_PREVIEW = WebcamPreviewWindow(camera_index)
+    _WEBCAM_PREVIEW = WebcamPreviewWindow(camera_source)
     _WEBCAM_PREVIEW.show()
 
 
@@ -1653,7 +1908,7 @@ class MapperDialog(QDialog):
 class LiveMapperDialog(QDialog):
     """Source × Target mapper for live webcam mode."""
 
-    def __init__(self, camera_index: int, mapping: list):
+    def __init__(self, camera_index: int | str, mapping: list):
         super().__init__(_MAIN)
         self._camera_index = camera_index
         self._map = mapping
@@ -1776,7 +2031,7 @@ def _open_mapper_dialog(start_cb: Callable, mapping: list) -> None:
     _MAPPER.show()
 
 
-def _open_live_mapper_dialog(camera_index: int, mapping: list) -> None:
+def _open_live_mapper_dialog(camera_index: int | str, mapping: list) -> None:
     global _LIVE_MAPPER
     close_mapper_window()
     _LIVE_MAPPER = LiveMapperDialog(camera_index, mapping)
