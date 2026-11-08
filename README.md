@@ -72,7 +72,7 @@ Perfect if you want the fastest setup with **zero manual installation**, pre-con
 
 ## One-click local bootstrapper
 
-You can bootstrap a local install from the repository root with a platform-aware installer:
+You can test the installer locally from the repository root with the platform-aware bootstrapper:
 
 ```bash
 python bootstrap_installer.py
@@ -82,6 +82,23 @@ This launcher detects the current operating system and runs the matching package
 - Windows: installs Git, Python, FFmpeg, and Visual Studio Build Tools when needed, then creates a local desktop launcher
 - Linux: installs the system prerequisites available through the package manager, then creates a .desktop launcher
 - macOS: installs the required Homebrew packages and creates a Desktop launcher
+
+### Download and test on a real machine
+
+1. Download the repository as a ZIP from the GitHub branch or clone it:
+   ```bash
+   git clone https://github.com/art-e-ui/Deep-Live-Cam.git
+   cd Deep-Live-Cam
+   ```
+2. Start the installer from the project root:
+   ```bash
+   python bootstrap_installer.py
+   ```
+3. Choose the install mode in the cinematic wizard and let the installer set up prerequisites.
+4. After installation, the app launches from the generated desktop shortcut or by running:
+   ```bash
+   python run.py
+   ```
 
 After installation, you can also create the launcher manually with:
 

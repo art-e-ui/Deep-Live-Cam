@@ -27,8 +27,8 @@ class InstallerWizard:
     def __init__(self, root):
         self.root = root
         self.root.title("Artesys-DLC Setup")
-        self.root.geometry("640x520")
-        self.root.minsize(540, 420)
+        self.root.geometry("720x560")
+        self.root.minsize(620, 500)
         self.root.configure(bg="#07111f")
 
         self._apply_theme()
@@ -48,52 +48,56 @@ class InstallerWizard:
         style.map("Gold.TProgressbar", background=[("active", "#d4af37")])
 
     def _build_header(self):
-        header = tk.Frame(self.root, bg="#0b1a2b", height=110)
+        header = tk.Frame(self.root, bg="#091827", height=150)
         header.pack(fill="x")
         header.pack_propagate(False)
+
+        glow = tk.Frame(header, bg="#16375d", height=130)
+        glow.place(x=0, y=0, relwidth=1, height=130)
 
         badge = tk.Label(
             header,
             text="A",
-            font=("Segoe UI", 28, "bold"),
-            fg="#d4af37",
-            bg="#10253e",
+            font=("Segoe UI", 30, "bold"),
+            fg="#f8d98d",
+            bg="#10233d",
             bd=2,
             relief="solid",
             padx=18,
-            pady=8,
+            pady=10,
+            justify="center",
         )
-        badge.place(x=36, y=20)
+        badge.place(x=42, y=28)
 
         brand = tk.Label(
             header,
             text="Artesys",
-            font=("Segoe UI", 22, "bold"),
+            font=("Segoe UI", 26, "bold"),
             fg="#f8fafc",
-            bg="#0b1a2b",
+            bg="#091827",
         )
-        brand.place(x=100, y=22)
+        brand.place(x=126, y=30)
 
-        subtitle = tk.Label(
+        sub = tk.Label(
             header,
             text="DLC Installer",
-            font=("Segoe UI", 11, "bold"),
+            font=("Segoe UI", 12, "bold"),
             fg="#d4af37",
-            bg="#0b1a2b",
+            bg="#091827",
         )
-        subtitle.place(x=101, y=58)
+        sub.place(x=128, y=74)
 
-        subtitle2 = tk.Label(
+        tagline = tk.Label(
             header,
-            text="local setup and launcher",
+            text="cinematic local setup • launcher • desktop access",
             font=("Segoe UI", 9),
             fg="#cbd5e1",
-            bg="#0b1a2b",
+            bg="#091827",
         )
-        subtitle2.place(x=101, y=80)
+        tagline.place(x=128, y=104)
 
         accent = tk.Frame(header, bg="#d4af37", height=4)
-        accent.place(relx=0.14, rely=1.0, relwidth=0.72, anchor="s")
+        accent.place(relx=0.12, rely=1.0, relwidth=0.74, anchor="s")
 
     def _build_content(self):
         content = tk.Frame(self.root, bg="#0f172a")
@@ -102,36 +106,39 @@ class InstallerWizard:
         self.profile_var = tk.StringVar(value="standard")
         self.shortcut_var = tk.BooleanVar(value=True)
 
-        section = tk.LabelFrame(
-            content,
-            text="Installation options",
-            font=("Segoe UI", 10, "bold"),
-            bg="#0f172a",
-            fg="#e2e8f0",
-            bd=1,
-            padx=16,
-            pady=12,
-        )
-        section.pack(fill="x")
+        panel = tk.Frame(content, bg="#111d2f", bd=1, relief="sunken", padx=16, pady=16)
+        panel.pack(fill="x")
 
-        ttk.Radiobutton(section, text="Standard install (recommended)", variable=self.profile_var, value="standard").pack(anchor="w", pady=(0, 6))
-        ttk.Radiobutton(section, text="Quick setup without desktop shortcut", variable=self.profile_var, value="quick").pack(anchor="w")
+        title = tk.Label(
+            panel,
+            text="Installation profile",
+            font=("Segoe UI", 11, "bold"),
+            fg="#f8fafc",
+            bg="#111d2f",
+            anchor="w",
+        )
+        title.pack(anchor="w")
+
+        tk.Label(panel, text="Choose the install mode best suited for your machine.", fg="#cbd5e1", bg="#111d2f", justify="left").pack(anchor="w", pady=(4, 12))
+
+        ttk.Radiobutton(panel, text="Standard install (recommended)", variable=self.profile_var, value="standard").pack(anchor="w", pady=(0, 8))
+        ttk.Radiobutton(panel, text="Quick setup without desktop shortcut", variable=self.profile_var, value="quick").pack(anchor="w")
 
         tk.Checkbutton(
-            section,
+            panel,
             text="Create a desktop shortcut after install",
             variable=self.shortcut_var,
             onvalue=True,
             offvalue=False,
-            bg="#0f172a",
+            bg="#111d2f",
             fg="#e2e8f0",
-            activebackground="#0f172a",
-            selectcolor="#0f172a",
+            activebackground="#111d2f",
+            selectcolor="#111d2f",
         ).pack(anchor="w", pady=(18, 0))
 
         self.progress_var = tk.DoubleVar(value=0.0)
         self.progress = ttk.Progressbar(content, mode="determinate", maximum=100, variable=self.progress_var, style="Gold.TProgressbar")
-        self.progress.pack(fill="x", pady=(16, 10))
+        self.progress.pack(fill="x", pady=(18, 8))
 
         status = tk.Label(
             content,
@@ -154,15 +161,15 @@ class InstallerWizard:
             padx=10,
             pady=10,
         )
-        log_frame.pack(fill="both", expand=True, pady=(10, 0))
+        log_frame.pack(fill="both", expand=True, pady=(12, 0))
 
         self.log_text = tk.Text(log_frame, height=10, bg="#020b14", fg="#dbeafe", wrap="word", font=("Consolas", 9))
         self.log_text.pack(fill="both", expand=True)
-        self.log_text.insert("end", "[installer] Starting setup...\n")
+        self.log_text.insert("end", "[installer] Starting cinematic setup sequence...\n")
         self.log_text.configure(state="disabled")
 
     def _build_footer(self):
-        footer = tk.Frame(self.root, bg="#0b1321", height=90)
+        footer = tk.Frame(self.root, bg="#0b1321", height=92)
         footer.pack(fill="x")
         footer.pack_propagate(False)
 
@@ -176,7 +183,7 @@ class InstallerWizard:
             command=self._launch_app,
             state="disabled",
         )
-        self.launch_button.place(relx=1.0, x=-170, y=24, anchor="nw")
+        self.launch_button.place(relx=1.0, x=-180, y=24, anchor="nw")
 
         cancel_button = tk.Button(
             footer,
@@ -198,7 +205,7 @@ class InstallerWizard:
             width=14,
             command=self._perform_install,
         )
-        install_button.place(x=170, y=24)
+        install_button.place(x=180, y=24)
 
     def _append_log(self, message: str):
         self.log_text.configure(state="normal")
