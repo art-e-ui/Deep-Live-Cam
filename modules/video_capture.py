@@ -11,7 +11,7 @@ if platform.system() == "Windows":
 
 
 class VideoCapturer:
-    def __init__(self, device_index: int):
+    def __init__(self, device_index: int | str):
         self.device_index = device_index
         self.frame_callback = None
         self._current_frame = None
@@ -34,9 +34,17 @@ class VideoCapturer:
                 )
 
     def start(self, width: int = 960, height: int = 540, fps: int = 60) -> bool:
-        """Initialize and start video capture"""
+        """Initialize and start video capture."""
         try:
-            if platform.system() == "Windows":
+            if isinstance(self.device_index, str):
+                source = str(self.device_index).strip()
+                if not source:
+                    raise RuntimeError("Network camera URL is empty")
+                try:
+                    self.cap = cv2.VideoCapture(source, cv2.CAP_ANY)
+                except Exception:
+                    self.cap = cv2.VideoCapture(source)
+            elif platform.system() == "Windows":
                 # device_index comes from pygrabber.FilterGraph (DirectShow
                 # enumeration), so open with DSHOW first to preserve mapping.
                 # MSMF and DirectShow enumerate cameras in different orders, so

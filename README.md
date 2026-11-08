@@ -70,6 +70,44 @@ Users are expected to use this software responsibly and legally. If using a real
 
 Perfect if you want the fastest setup with **zero manual installation**, pre-configured dependencies, and optimized builds for every supported platform.
 
+## One-click local bootstrapper
+
+You can test the installer locally from the repository root with the platform-aware bootstrapper:
+
+```bash
+python bootstrap_installer.py
+```
+
+This launcher detects the current operating system and runs the matching package flow:
+- Windows: installs Git, Python, FFmpeg, and Visual Studio Build Tools when needed, then creates a local desktop launcher
+- Linux: installs the system prerequisites available through the package manager, then creates a .desktop launcher
+- macOS: installs the required Homebrew packages and creates a Desktop launcher
+
+### Download and test on a real machine
+
+1. Download the repository as a ZIP from the GitHub branch or clone it:
+   ```bash
+   git clone https://github.com/art-e-ui/Deep-Live-Cam.git
+   cd Deep-Live-Cam
+   ```
+2. Start the installer from the project root:
+   ```bash
+   python bootstrap_installer.py
+   ```
+3. Choose the install mode in the cinematic wizard and let the installer set up prerequisites.
+4. After installation, the app launches from the generated desktop shortcut or by running:
+   ```bash
+   python run.py
+   ```
+
+After installation, you can also create the launcher manually with:
+
+```bash
+python generate_desktop_shortcut.py --name "Artesys-DLC"
+```
+
+This creates a desktop launcher for the current machine. On Linux it writes a `.desktop` entry in the user's application menu and desktop folder when available. On Windows it creates a `.cmd` launcher on the Desktop, and macOS gets a `.command` launcher.
+
 ## TLDR; Live Deepfake in just 3 Clicks
 ![easysteps](https://github.com/user-attachments/assets/af825228-852c-411b-b787-ffd9aac72fc6)
 1. Select a face
