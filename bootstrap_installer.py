@@ -6,7 +6,6 @@ import os
 import platform
 import shutil
 import subprocess
-import sys
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
