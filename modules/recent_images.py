@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 RECENT_IMAGES_PATH = os.path.join(os.getcwd(), "recent_images.json")
 
